@@ -1,2 +1,2 @@
-# MiscScripts
-For misc small scripts
+# Misc Scripts
+Misc small scripts
