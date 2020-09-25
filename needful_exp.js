@@ -28,7 +28,7 @@ function needfulExp(level, beginVal, stepMultiplier, dontFloor, floorPlusModif, 
 	return dontFloor?i:Math.floor(i)
 }
 let text=""
-let levels=[1,2,3,4,5,6,36,37,38]/*[1,6,36,38]*/
+let levels=[1,2,3,5,10,20,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900,1000,5000,10000]/*[1,6,36,38]*/
 for(let v of levels)
-	text+=v+": "+needfulExp(v)+"\n"
+	text+=v+": "+needfulExp(v,1,0.05,1,0,0,0,0,0)*1000+"\n"
 alert(text)
