@@ -1,65 +1,73 @@
-let dotsSet=[]
+let dots=[]
 function connect(dot0,dot1) {
-	if(dot0.neighbours.indexOf(dot1)==-1)dot0.neighbours.push(dot1)
-	if(dot1.neighbours.indexOf(dot0)==-1)dot1.neighbours.push(dot0)
+	if(dot0.neighbours.indexOf(dot1)==-1)
+		dot0.neighbours.push(dot1)
+	if(dot1.neighbours.indexOf(dot0)==-1)
+		dot1.neighbours.push(dot0)
+}
+function unconnect(dot0,dot1) {
+	if(dot0.neighbours.indexOf(dot1)!=-1)
+		dot0.neighbours.splice(dot0.neighbours.indexOf(dot1),1)
+	if(dot1.neighbours.indexOf(dot0)!=-1)
+		dot1.neighbours.splice(dot1.neighbours.indexOf(dot0),1)
 }
 function frame(n,s) {
 	return (n%s+s)%s
 }
 function fill(dontCheck) {
-	let dotsArray=[]
-	let cellsCountX=100,cellsCountY=100,cellsCountZ=1
-	for(let x=0;x<cellsCountX;x++)
-		for(let y=0;y<cellsCountY;y++)
-			for(let z=0;z<cellsCountZ;z++)
-				dotsSet.push(dotsArray[x*cellsCountY+y]={energy:Math.random()<0.9?"black":"green",neighbours:[]})
+	dots._render={xs:100,ys:100,zs:1}
+	for(let x=0;x<dots._render.xs;x++)
+		for(let y=0;y<dots._render.ys;y++)
+			for(let z=0;z<dots._render.zs;z++)
+				dots.push({energy:Math.random()<0.9?"black":"green",neighbours:[],_render:{x:x,y:y,z:z}})
 	function inBounds(dot,boundsMin,boundsMax) {
-		if(!boundsMin)
-			boundsMin=[0,0,0]
-		if(!boundsMax)
-			boundsMax=[cellsCountX-1,cellsCountY-1,cellsCountZ-1]
+		boundsMin=boundsMin||[0,0,0]
+		boundsMax=boundsMax||[dots._render.xs-1,dots._render.ys-1,dots._render.zs-1]
 		for(let i=0;i<dot.length;i++)
 			if(dot[i]<boundsMin[i]||dot[i]>boundsMax[i])
 				return false
 		return true
 	}
 	function getDot(x,y,z) {
-		return dotsArray[(frame(x,cellsCountX)*cellsCountY+frame(y,cellsCountY))*cellsCountZ+frame(z,cellsCountZ)]
+		x=frame(x||0,dots._render.xs)
+		y=frame(y||0,dots._render.ys)
+		z=frame(z||0,dots._render.zs)
+		for(let d of dots)
+			if(d._render&&d._render.x==x&&d._render.y==y&&d._render.z==z)
+				return d
 	}
-	for(let x=0;x<cellsCountX;x++)
-		for(let y=0;y<cellsCountY;y++)
-			for(let z=0;z<cellsCountZ;z++)
-			{
-				let cur=getDot(x,y,z)
-				let allCount=cellsCountX*cellsCountY*cellsCountZ
-				if(inBounds([x+1,y,z])||dontCheck)
-					connect(cur,getDot(x+1,y,z))
-				if(inBounds([x-1,y,z])||dontCheck)
-					connect(cur,getDot(x-1,y,z))
-				if(inBounds([x,y+1,z])||dontCheck)
-					connect(cur,getDot(x,y+1,z))
-				if(inBounds([x,y-1,z])||dontCheck)
-					connect(cur,getDot(x,y-1,z))
-				if(x==2&&y==5||x==7&&y==4)
-					connect(dotsArray[2*cellsCountY+5],dotsArray[7*cellsCountY+4])
-			}
+	for(let cur of dots)
+		if(cur._render)
+		{
+			let x=cur._render.x,y=cur._render.y,z=cur._render.z
+			let allCount=dots._render.xs*dots._render.ys*dots._render.zs
+			if(getDot(x+1,y,z)||dontCheck)
+				connect(cur,getDot(x+1,y,z))
+			if(getDot(x-1,y,z)||dontCheck)
+				connect(cur,getDot(x-1,y,z))
+			if(getDot(x,y+1,z)||dontCheck)
+				connect(cur,getDot(x,y+1,z))
+			if(getDot(x,y-1,z)||dontCheck)
+				connect(cur,getDot(x,y-1,z))
+			if(x==2&&y==5||x==7&&y==4)
+				connect(getDot(2,5,0),getDot(7,4,0))
+			cur.sourceNeighbour=cur.neighbours[Math.floor(Math.random()*cur.neighbours.length)]
+		}
 	function updateField(dot,cellSize) {
 		if(!cellSize&&cellSize!==0)
-			cellSize=4
-		ctx2.clearRect(0,0,cellSize*cellsCountX,cellSize*cellsCountY)
+			cellSize=400/dots._render.xs
+		ctx2.clearRect(0,0,cellSize*dots._render.xs,cellSize*dots._render.ys)
 		ctx2.strokeStyle="blue"
-		for(let x=0;x<cellsCountX;x++)
-			for(let y=0;y<cellsCountY;y++)
-				for(let z=0;z<cellsCountZ;z++)
-				{
-					let cur=getDot(x,y,z)
-					ctx2.fillStyle=cur.energy
-					ctx2.fillRect(x*cellSize,y*cellSize,cellSize,cellSize)
-					if(cur.neighbours.length>4)
-						ctx2.strokeRect(x*cellSize,y*cellSize,cellSize,cellSize)
-				}
+		for(let cur of dots)
+			if(cur._render)
+			{
+				ctx2.fillStyle=cur.energy
+				ctx2.fillRect(cur._render.x*cellSize,cur._render.y*cellSize,cellSize,cellSize)
+				if(cur.neighbours.length>4)
+					ctx2.strokeRect(cur._render.x*cellSize,cur._render.y*cellSize,cellSize,cellSize)
+			}
 		ctx2.strokeStyle="red"
-		ctx2.strokeRect((dotsArray.indexOf(dot)-dotsArray.indexOf(dot)%cellsCountY)/cellsCountY*cellSize,dotsArray.indexOf(dot)%cellsCountY*cellSize,cellSize,cellSize)
+		ctx2.strokeRect(dot._render.x*cellSize,dot._render.y*cellSize,cellSize,cellSize)
 	}
 	let updateIntervalID=setInterval(()=>{
 		updateField(current)
@@ -72,7 +80,7 @@ let canvasZones=[]
 let canvas2=document.createElement("canvas"),ctx2=canvas2.getContext('2d')
 document.body.appendChild(canvas2)
 canvas2.height=canvas2.width=500
-let current=dotsSet[4]
+let current=dots[4]
 function paths(dot0,dot1) {
 	let ps={common:[]}
 	for(let d0 of dot0.neighbours)
@@ -135,9 +143,9 @@ function giveColor(text,color) {
 	return "<label style=\"color:"+color+"\">"+text+"</label>"
 }
 function tick() {
-	for(let i=0;i<dotsSet.length;i++)
+	for(let i=0;i<dots.length;i++)
 	{
-		let cur=dotsSet[i]
+		let cur=dots[i]
 		switch (cur.energy) {
 			case "yellow":
 			case "gray":
@@ -153,13 +161,36 @@ function tick() {
 			case "green":
 				for(let neighbour of cur.neighbours)
 				{
-					let ps=paths(cur.sourceNeighbour||cur.neighbours[Math.floor(Math.random()*cur.neighbours.length)], neighbour)
-					if(ps.common.length==1&&cur.energy!="black")
-					{
-						cur.energy=neighbour.energy
-						neighbour.energy="green"
-						neighbour.sourceNeighbour=cur
-					}
+					let ps=paths(cur.sourceNeighbour, neighbour)
+					if(ps.common.length==1)
+						if(0)// Move energy in space of dots how weights in net of neurons
+						{
+							cur.energy=neighbour.energy
+							neighbour.energy="green"
+							neighbour.sourceNeighbour=cur
+						}
+						else// Energy is same to dot, dots are same to space, move dots relative to other dots
+						{
+							let ns0=[],ns1=[]
+							for(let n0 of cur.neighbours)
+								ns0.push(n0)
+							for(let n1 of neighbour.neighbours)
+								ns1.push(n1)
+							for(let n0 of ns0)
+								unconnect(n0,cur)
+							for(let n1 of ns1)
+								unconnect(n1,neighbour)
+							for(let n0 of ns0)
+								connect(neighbour,n0!=neighbour?n0:cur)
+							for(let n1 of ns1)
+								connect(cur,n1!=cur?n1:neighbour)
+
+							let temp2=cur._render
+							cur._render=neighbour._render
+							neighbour._render=temp2
+
+							cur.sourceNeighbour=neighbour
+						}
 				}
 				break;
 		}
